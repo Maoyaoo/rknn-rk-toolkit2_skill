@@ -28,6 +28,28 @@ cp -r rknn-rk-toolkit2_skill .qoder/skills/rknn-rk-toolkit2
 
 安装后重启会话或执行 `/skills reload`，用 `/skills list` 确认已加载，再用 `/rknn-rk-toolkit2` 或直接描述 RKNN 任务触发。
 
+### ZCode（智谱 Z.ai）
+
+ZCode 直接读取 `SKILL.md` 的 `name` / `description`，不需要额外的 manifest 或 `config.json`；安装目录名需与 `name` 一致。
+
+用户级（所有项目可用）：
+
+```bash
+mkdir -p ~/.zcode/skills
+cp -r rknn-rk-toolkit2_skill ~/.zcode/skills/rknn-rk-toolkit2
+# 期望路径：~/.zcode/skills/rknn-rk-toolkit2/SKILL.md
+```
+
+工作区级（仅当前项目）：
+
+```bash
+mkdir -p .zcode/skills
+cp -r rknn-rk-toolkit2_skill .zcode/skills/rknn-rk-toolkit2
+# 期望路径：.zcode/skills/rknn-rk-toolkit2/SKILL.md
+```
+
+安装后在 ZCode 的“设置 → 技能”中确认已启用；对话中直接描述 RKNN 任务，或点名 `rknn-rk-toolkit2` 触发。ZCode 对 `name` 的要求（小写、无空格/点、≤64 字符）和 `description` ≤1024 字符，本包均已满足。
+
 ### Claude Code
 
 用户级（所有项目可用）：
@@ -48,27 +70,45 @@ cp -r rknn-rk-toolkit2 .claude/skills/
 
 在 Claude Code 中通过 Skill 工具调用，名字为 `rknn-rk-toolkit2`。
 
-### Codex / OpenAI 兼容 agent
+### Codex（OpenAI）
 
-不同 Codex / OpenAI agent 版本的技能目录约定可能不同，`agents/openai.yaml` 提供本 skill 的展示元数据。以你所装版本支持的方式为准；常见位置如下。
+Codex 把含 `SKILL.md` 的文件夹识别为技能，支持 `$rknn-rk-toolkit2` 显式调用，也会按 `description` 隐式匹配。安装目录名需与 `name` 一致，且不能含空格或中文。
 
-用户级：
-
-```bash
-mkdir -p ~/.agents/skills
-cp -r rknn-rk-toolkit2 ~/.agents/skills/
-# 期望路径：~/.agents/skills/rknn-rk-toolkit2/SKILL.md
-```
-
-项目级：
+用户级（所有项目可用）：
 
 ```bash
-mkdir -p .agents/skills
-cp -r rknn-rk-toolkit2 .agents/skills/
-# 期望路径：.agents/skills/rknn-rk-toolkit2/SKILL.md
+mkdir -p ~/.codex/skills
+cp -r rknn-rk-toolkit2_skill ~/.codex/skills/rknn-rk-toolkit2
+# 期望路径：~/.codex/skills/rknn-rk-toolkit2/SKILL.md
 ```
 
-如果你拿到的是 zip 包，把上面的 `cp -r` 换成 `unzip rknn-rk-toolkit2.zip -d` 即可。
+项目级（仅当前项目）：
+
+```bash
+mkdir -p .codex/skills
+cp -r rknn-rk-toolkit2_skill .codex/skills/rknn-rk-toolkit2
+# 期望路径：.codex/skills/rknn-rk-toolkit2/SKILL.md
+```
+
+若设置了 `CODEX_HOME`，用户级目录相应为 `$CODEX_HOME/skills/rknn-rk-toolkit2`。也可以在 `~/.codex/config.toml` 中用 `[skills]` 指定额外技能目录：
+
+```toml
+[skills]
+enabled = true
+directory = "~/codex-skills"
+```
+
+不同 Codex 版本的扫描范围略有差异：除 `~/.codex/skills` 外，部分版本还读取跨工具的 `~/.agents/skills`（项目内 `.agents/skills`）和系统级 `/etc/codex/skills`。若安装后没有被识别，把同一目录复制或软链到 `~/.agents/skills/rknn-rk-toolkit2` 再试。
+
+本包自带 `agents/openai.yaml`（展示名、默认提示词、`allow_implicit_invocation`），Codex 的技能界面会读取它；缺少该文件也能正常工作。
+
+安装后重启 Codex 进程（CLI 退出重进、IDE 重载窗口），在 `/skills` 列表确认已加载，然后显式调用：
+
+```text
+$rknn-rk-toolkit2 把 export.onnx 转成 RK3576 的 rknn，做 w8a8 量化
+```
+
+Codex 还会读取项目根目录的 `AGENTS.md`，可配合下文「集成到项目 AGENTS.md」使用。如果你拿到的是 zip 包，把上面的 `cp -r` 换成 `unzip rknn-rk-toolkit2.zip -d` 即可。
 
 ## 推荐触发词
 
@@ -163,7 +203,7 @@ rg -n "RKNN_ERR_DEVICE_UNAVAILABLE|Invalid RKNN model version|NonMaxSuppression"
 bash scripts/smoke_test.sh
 ```
 
-这会对所有 Python 脚本运行 `--help` 与 `py_compile`，对所有 C/C++ 模板用极简 RKNN/RGA stub 做 `gcc -fsyntax-only` 语法检查，检查 reference 文件非空、`SKILL.md` frontmatter（`name` 匹配、`description` 单行且不超过 1024 字符）、skill 内容中的主机绝对路径、`routing.yaml` / `SKILL.md` 指向的文件是否存在、每个 reference 是否从入口层可达、Markdown 表格列数是否一致，以及 `rknn_doc/` 原文是否完整，作为一次廉价的回归检查。
+这会对所有 Python 脚本运行 `--help` 与 `py_compile`，对所有 C/C++ 模板用极简 RKNN/RGA stub 做 `gcc -fsyntax-only` 语法检查，检查 reference 文件非空、`SKILL.md` frontmatter（`name` 匹配、符合 Qoder/ZCode/Claude Code/Codex 的小写连字符且 ≤64 字符、`description` 单行且不超过 1024 字符）、skill 内容中的主机绝对路径、`routing.yaml` / `SKILL.md` 指向的文件是否存在、每个 reference 是否从入口层可达、Markdown 表格列数是否一致，以及 `rknn_doc/` 原文是否完整，作为一次廉价的回归检查。
 
 ## 注意
 

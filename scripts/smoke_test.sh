@@ -220,10 +220,18 @@ fi
 # Frontmatter sanity: name must match the skill name, description must be one line and <=1024 chars.
 name_line=$(awk 'BEGIN{c=0} /^---$/{c++; next} c==1 && /^name:/{print; exit}' "$ROOT/SKILL.md")
 desc_line=$(awk 'BEGIN{c=0} /^---$/{c++; next} c==1 && /^description:/{print; exit}' "$ROOT/SKILL.md")
-if printf '%s' "$name_line" | rg -q '^name: rknn-rk-toolkit2$'; then
+skill_name=$(printf '%s' "$name_line" | sed 's/^name:[[:space:]]*//' | tr -d '\r')
+if [ "$skill_name" = "rknn-rk-toolkit2" ]; then
   echo "ok: SKILL.md name is rknn-rk-toolkit2"
 else
   echo "FAIL: SKILL.md name missing or does not match the skill name"
+  status=1
+fi
+# Qoder/ZCode/Claude Code/Codex naming: lowercase, digits, hyphens, no spaces/dots, <=64 chars.
+if printf '%s' "$skill_name" | rg -q '^[a-z0-9][a-z0-9-]*$' && [ "${#skill_name}" -le 64 ]; then
+  echo "ok: skill name satisfies lowercase/hyphen and <=64 chars (host agent naming)"
+else
+  echo "FAIL: skill name violates lowercase/hyphen or <=64 chars (host agent naming)"
   status=1
 fi
 if [ -n "$desc_line" ] && [ "${#desc_line}" -le 1024 ]; then

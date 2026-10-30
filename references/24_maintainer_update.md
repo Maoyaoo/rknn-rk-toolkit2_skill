@@ -10,7 +10,7 @@ Maintainer-only procedure. **Not an agent task route** for end-user RKNN questio
 | `references/*.md`, `rknn_doc/*.md` | Board binaries, `.so` files, private datasets |
 | `scripts/`, `assets/`, `agents/`, `README.md`, `LICENSE` | Build outputs, `__pycache__`, logs |
 
-The installed skill must stay usable with no external checkout. Describe all example paths relative to the user's own Toolkit2 / `rknpu2` / `rknn_model_zoo` install.
+The installed skill must stay usable with no external checkout. Describe all example paths relative to the user's own Toolkit2 / `rknpu2` / `rknn_model_zoo` install. The install directory must be named exactly `rknn-rk-toolkit2` (matching the frontmatter `name`) for Qoder / ZCode / Claude Code / Codex; the repo folder name `rknn-rk-toolkit2_skill` is packaging-only.
 
 ## When to bump content
 
