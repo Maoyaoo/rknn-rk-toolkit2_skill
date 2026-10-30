@@ -1,0 +1,28 @@
+# Local-only SDK / Model Zoo checkouts and build outputs. Never part of the skill package.
+refer/
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# RKNN build artifacts
+*.rknn
+*.log
+rknn_build.log
+*.quantization.cfg
+*.model
+*.data
+
+# Dataset / dumps
+dataset.txt
+dumps/
+
+# Editor / OS
+.vscode/
+.idea/
+.DS_Store
+*.swp

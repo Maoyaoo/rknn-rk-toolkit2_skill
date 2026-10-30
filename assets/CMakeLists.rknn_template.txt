@@ -1,0 +1,37 @@
+cmake_minimum_required(VERSION 3.10)
+project(rknn_app C CXX)
+
+set(CMAKE_CXX_STANDARD 11)
+set(TARGET_SOC "rk3588" CACHE STRING "rk3562/rk3566/rk3568/rk3576/rk3588/rv1126b/rv1103/rv1106 (+B variants)")
+set(RKNN_TARGET_OS "linux" CACHE STRING "linux / android")
+set(TARGET_ARCH "aarch64" CACHE STRING "linux: aarch64/armhf/armhf-uclibc; android: arm64-v8a/armeabi-v7a")
+set(RKNN_API_ROOT "${CMAKE_SOURCE_DIR}/3rdparty/rknpu2" CACHE PATH "rknpu2 runtime root (contains Linux/, Android/, include/)")
+
+if(TARGET_SOC STREQUAL "rk2118")
+  message(FATAL_ERROR "RK2118 uses the RT-Thread SDK runtime (rt-thread/components/rknpu), not this rknpu2 layout")
+endif()
+
+set(RKNN_API_INCLUDE_DIR "${RKNN_API_ROOT}/include")
+
+# Model Zoo 3rdparty layout: <root>/Linux/<arch>/ or <root>/Android/<abi>/
+# rknpu2 layout:            <root>/runtime/<OS>/librknn_api/<arch>/ — point RKNN_API_ROOT at that directory instead.
+if(RKNN_TARGET_OS STREQUAL "android")
+  set(RKNN_API_LIB_DIR "${RKNN_API_ROOT}/Android/${TARGET_ARCH}")
+  set(RKNN_API_LIB_NAME "librknnrt.so")
+elseif(TARGET_SOC STREQUAL "rv1106" OR TARGET_SOC STREQUAL "rv1103" OR
+       TARGET_SOC STREQUAL "rv1106b" OR TARGET_SOC STREQUAL "rv1103b")
+  set(RKNN_API_LIB_DIR "${RKNN_API_ROOT}/Linux/armhf-uclibc")
+  set(RKNN_API_LIB_NAME "librknnmrt.so")
+else()
+  set(RKNN_API_LIB_DIR "${RKNN_API_ROOT}/Linux/${TARGET_ARCH}")
+  set(RKNN_API_LIB_NAME "librknnrt.so")
+endif()
+
+set(RKNN_API_LIB "${RKNN_API_LIB_DIR}/${RKNN_API_LIB_NAME}")
+if(NOT EXISTS "${RKNN_API_LIB}")
+  message(FATAL_ERROR "Runtime library not found: ${RKNN_API_LIB}")
+endif()
+
+add_executable(rknn_app main.c)
+target_include_directories(rknn_app PRIVATE ${RKNN_API_INCLUDE_DIR})
+target_link_libraries(rknn_app PRIVATE ${RKNN_API_LIB} dl pthread m)

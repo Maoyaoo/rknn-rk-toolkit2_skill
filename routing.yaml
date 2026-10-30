@@ -1,0 +1,156 @@
+# Canonical routing for rknn-rk-toolkit2 skill (root-level skill package).
+# Always Read + Common Tasks in SKILL.md must stay in sync with this file.
+# Edit this file first, then update the SKILL.md Common Tasks table by hand.
+
+always_read:
+  - conventions/agent-response.md
+  - references/01_platform_matrix.md
+
+tasks:
+  - id: setup-env
+    labels: { en: Toolkit2 install / host environment, zh: Toolkit2 安装 / 主机环境 }
+    required_reads:
+      - references/02_toolkit2_conversion.md
+    workflow: workflows/convert-model.md
+    route: read the host-environment section of 02; branch to 08_wsl.md for WSL; check installed Toolkit2 version before recommending knobs
+    trigger_examples:
+      - rknn-toolkit2 怎么安装
+      - pip install rknn-toolkit2 失败
+      - from rknn.api import RKNN 报错
+      - Python 版本 / Docker / ARM64 Toolkit2
+      - SDK 版本是多少
+  - id: convert-model
+    labels: { en: Convert model to RKNN, zh: 模型转换 / 导出 rknn }
+    required_reads:
+      - references/02_toolkit2_conversion.md
+    workflow: workflows/convert-model.md
+    route: follow `workflows/convert-model.md`; use conversion assets + dataset helper
+    trigger_examples:
+      - 把这个 ONNX 转成 rknn
+      - convert pytorch to rknn for rk3588
+      - 导出 RK3576 可运行的模型
+      - target_platform 该怎么设
+      - rknn_convert / yml 批量转换
+
+  - id: quant-accuracy
+    labels: { en: Quantization / accuracy triage, zh: 量化 / 精度掉点 }
+    required_reads:
+      - references/03_quantization_accuracy.md
+      - references/02_toolkit2_conversion.md
+    workflow: workflows/quant-accuracy.md
+    route: follow `workflows/quant-accuracy.md`; use accuracy_analysis template before QAT
+    trigger_examples:
+      - 量化后精度掉很多
+      - accuracy_analysis 怎么跑
+      - hybrid quantization / auto_hybrid
+      - MAP 比官方低
+
+  - id: board-debug
+    labels: { en: rknn_server / connected debug / init fail, zh: 连板调试 / rknn_server / 初始化失败 }
+    required_reads:
+      - references/04_board_debug_rknn_server.md
+      - references/09_troubleshooting.md
+      - gotchas/high-cost.md
+    workflow: workflows/board-debug.md
+    route: follow `workflows/board-debug.md`; probe env then version/path matrix
+    trigger_examples:
+      - RKNN_ERR_DEVICE_UNAVAILABLE
+      - rknn_server 起不来
+      - Invalid RKNN model version
+      - adb devices 是空的
+
+  - id: runtime-c
+    labels: { en: Board C/C++ runtime inference, zh: 板端 C/C++ 推理 }
+    required_reads:
+      - references/05_runtime_c_api.md
+    workflow: workflows/runtime-c.md
+    route: follow `workflows/runtime-c.md`; pick general API vs zero-copy by SoC
+    trigger_examples:
+      - 写一个 C 推理 demo
+      - rknn_inputs_set 怎么用
+      - zero-copy / rknn_set_io_mem
+      - dynamic shape C API
+      - rknn_matmul 怎么用
+      - rknn_create_mem2 / cacheable
+
+  - id: operator-support
+    labels: { en: Operator support / fallback, zh: 算子支持 / CPU fallback }
+    required_reads:
+      - references/07_operator_support.md
+      - references/15_rknn_doc_lookup.md
+    workflow: workflows/operator-support.md
+    route: follow `workflows/operator-support.md`; escalate to rknn_doc for attrs/limits; if only fix is custom op, hand off to graph-advanced
+    trigger_examples:
+      - 这个 Softmax 支持吗
+      - NonMaxSuppression 能不能上 NPU
+      - unsupported op / fallback to CPU
+      - ConvTranspose 限制
+      - Softmax 16384 / AveragePool 上限
+      - 算子支持但很慢
+
+  - id: graph-advanced
+    labels: { en: Custom op / onnx_edit / sparsity, zh: 自定义算子 / onnx_edit / 稀疏 }
+    required_reads:
+      - gotchas/high-cost.md
+    workflow: workflows/graph-advanced.md
+    route: follow `workflows/graph-advanced.md`; branch to 21/22/23 by signal
+    trigger_examples:
+      - reg_custom_op / 自定义算子
+      - onnx_edit 改输入输出 / 5D 改 4D / I/O reshape
+      - sparse_infer / AutoSparsity / model_pruning / 稀疏推理
+      - examples/functions 哪个 demo
+      - cstSigmoid / custom ONNX op / rknn_register_custom_ops
+      - RV1106 上写 custom op  # still this route — workflow must refuse mini-runtime
+
+  - id: model-zoo-port
+    labels: { en: Model Zoo porting / demo adapt, zh: Model Zoo 迁移 / demo 改造 }
+    required_reads:
+      - references/10_model_zoo_workflows.md
+      - references/09_troubleshooting.md
+      - gotchas/high-cost.md
+    workflow: workflows/model-zoo-port.md
+    route: follow `workflows/model-zoo-port.md`; if ask is only "no demo = unsupported?", answer FAQ gotcha first then closest-family port
+    trigger_examples:
+      - 改 yolov8 demo 跑自己的模型
+      - yolo11 / clip / whisper demo 怎么跑
+      - Model Zoo 编译不过
+      - build-linux.sh / build-android.sh
+      - demo 对了自己模型不对
+      - 没有某某模型的 demo 是不是不支持
+
+  - id: platform-special
+    labels: { en: Platform-specific deploy, zh: 平台特例部署 }
+    required_reads: []
+    workflow: workflows/platform-special.md
+    route: follow `workflows/platform-special.md`; branch to Lite2/Android/RV110x/RK2118/WSL/perf docs
+    trigger_examples:
+      - RK2118 RT-Thread
+      - RV1106 板端部署
+      - Android JNI / HIDL
+      - Toolkit-Lite2 板端 Python
+      - WSL 连板
+      - 性能优化 / 内存优化
+      - 模型加密 / export_encrypted_rknn_model
+      - 多 batch / rknn_batch_size / 权重共享 / NPU SRAM / QAT
+
+  - id: doc-lookup
+    labels: { en: Raw doc / exact API or limit lookup, zh: 查原文 / 精确 API 或数值 }
+    required_reads:
+      - references/15_rknn_doc_lookup.md
+      - references/00_source_map.md
+    workflow: workflows/doc-lookup.md
+    route: follow `workflows/doc-lookup.md`; references first then rknn_doc
+    trigger_examples:
+      - rknn_init_extend 字段
+      - 查 User Guide 里某条报错
+      - AveragePool 窗口上限
+      - V2.3.2 API 签名
+
+  - id: other
+    labels: { en: Other / unlisted RKNN task, zh: 其他 / 未列出的 RKNN 任务 }
+    required_reads:
+      - references/16_task_entry_map.md
+    workflow: workflows/doc-lookup.md
+    route: use `references/16_task_entry_map.md` then closest workflow; always apply response contract + review checklist
+    trigger_examples:
+      - 其他 RKNN 相关问题

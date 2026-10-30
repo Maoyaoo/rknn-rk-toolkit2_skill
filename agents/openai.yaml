@@ -1,0 +1,7 @@
+interface:
+  display_name: "Rockchip RKNN / RKNPU2"
+  short_description: "RKNN-Toolkit2 conversion, quantization, Model Zoo porting, runtime deployment, and rknn_server debugging."
+  brand_color: "#2563EB"
+  default_prompt: "$rknn-rk-toolkit2 "
+policy:
+  allow_implicit_invocation: true
